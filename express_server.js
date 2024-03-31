@@ -33,6 +33,16 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  // removes a URL resource
+  //After the resource has been deleted, redirect the client back to the urls_index page ("/urls").
+  const id = req.params.id
+  delete urlDatabase[id]
+  res.redirect(`/urls`); // 
+
+});
+
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -58,6 +68,8 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
