@@ -27,6 +27,12 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); // 
 });
 
+app.post("/urls/:id", (req, res) => {
+  let id = req.params.id;
+  res.redirect(`/urls/${id}`); // 
+});
+
+/// when user clicks on shortened URL it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -38,6 +44,19 @@ app.post("/urls/:id/delete", (req, res) => {
   //After the resource has been deleted, redirect the client back to the urls_index page ("/urls").
   const id = req.params.id
   delete urlDatabase[id]
+  res.redirect(`/urls`); // 
+
+});
+
+app.post("/urls/:id/edit", (req, res) => {
+  // update the value of your stored long URL based on req body
+  // redirect the client back to /urls
+  const id = req.params.id;
+  console.log(req.body)
+  
+  // console.log(urlDatabase)
+  urlDatabase[id] = req.body.test
+  // console.log(req.body)
   res.redirect(`/urls`); // 
 
 });
