@@ -32,6 +32,15 @@ app.get("/urls/:id", (req, res) => {
   res.redirect(`/urls/${id}`); // 
 });
 
+app.post("/login", (req, res) => {
+  // set a cookie named username to the value submitted in the request body via the login form
+  // redirect the browser back to the /urls page
+  const value = req.body.username
+  console.log(value)
+  res.cookie('username', value)
+  res.redirect(`/urls`); // 
+});
+
 /// when user clicks on shortened URL it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
