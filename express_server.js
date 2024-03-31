@@ -27,7 +27,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); // 
 });
 
-app.post("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => {
   let id = req.params.id;
   res.redirect(`/urls/${id}`); // 
 });
