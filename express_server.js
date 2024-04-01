@@ -42,6 +42,12 @@ app.post("/login", (req, res) => {
   res.redirect(`/urls`); // 
 });
 
+// When user clicks on logout button, their username cookie is deleted, and user is redirected to /urls page
+app.post("/logout", (req, res) => {
+  res.clearCookie('username')
+  res.redirect(`/urls`); // 
+});
+
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
