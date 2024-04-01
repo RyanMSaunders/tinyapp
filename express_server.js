@@ -48,6 +48,11 @@ app.post("/logout", (req, res) => {
   res.redirect(`/urls`); // 
 });
 
+app.post("/register", (req, res) =>{
+  res.render("register", templateVars);
+
+})
+
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
