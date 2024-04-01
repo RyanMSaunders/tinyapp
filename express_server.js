@@ -11,6 +11,16 @@ function generateRandomString() {
   return Math.random().toString(36).substring(6)
 }
 
+function userLookup(email) {
+  
+  for (user in users) {
+    if (users[user].email == email) {
+      return users[user]
+    }
+  }
+  return null
+}
+
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
@@ -30,6 +40,8 @@ const users = {
 
 };
 
+// console.log(userLookup("user2@example.com"));
+
 app.use(express.urlencoded({ extended: true }));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
@@ -46,7 +58,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); // 
 });
 
-//////////UPDATE 
 // When user enters login info in _header, a username cookie is set, and user is redirected to /urls page
 app.post("/login", (req, res) => {
   // set a cookie named username to the value submitted in the request body via the login form
@@ -60,35 +71,39 @@ app.post("/login", (req, res) => {
   res.redirect(`/urls`); // 
 });
 
-//////////UPDATE 
 // When user clicks on logout button, their username cookie is deleted, and user is redirected to /urls page
 app.post("/logout", (req, res) => {
   res.clearCookie('user')
   res.redirect(`/urls`); // 
 });
 
-// when user ... the register page is rendered in HTML
-app.get("/register", (req, res) =>{
-  res.render("register");
-
-})
-
 // when user enters information into email and password fields, 
 app.post("/register", (req, res) => {
+    
+  // console.log(userLookup(value.email));
+
+  if (req.body.email == '' || req.body.password == '') {
+    res.sendStatus(404);
+    res.redirect(`/urls`)
+  } else if (userLookup(req.body.email) !== null) {
+    res.sendStatus(404);
+    res.redirect(`/urls`)
+  }
+
   let userId = generateRandomString();
   users[userId] = {id: userId, email: req.body.email, password: req.body.password};
   const value = users[userId]
-  res.cookie('user', value)
+  
+  
+  
+  // console.log(userLookup(value.email));
   // console.log(users);
+
+  res.cookie('user', value)
   res.redirect(`/urls`); // 
 })
 
-/// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
-app.get("/u/:id", (req, res) => {
-  const id = req.params.id;
-  const longURL = urlDatabase[id];
-  res.redirect(longURL);
-});
+
 
 // when user clicks DELETE, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/delete", (req, res) => {
@@ -112,6 +127,19 @@ app.post("/urls/:id/edit", (req, res) => {
   // console.log(req.body)
   res.redirect(`/urls`); // 
 
+});
+
+// when user ... the register page is rendered in HTML
+app.get("/register", (req, res) =>{
+  res.render("register");
+
+})
+
+/// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
+  const longURL = urlDatabase[id];
+  res.redirect(longURL);
 });
 
 // when user access page /hello, sends  hello
@@ -143,7 +171,6 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//////////UPDATE 
 // when user accesses /urls/new, renders urls_new
 app.get("/urls/new", (req, res) => {
   const templateVars = { 
@@ -152,7 +179,6 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-//////////UPDATE 
 // when user accesses /urls/:id, renders urls_show page with HTML updated with templateVars
 app.get("/urls/:id", (req, res) => { 
   const templateVars = { 
