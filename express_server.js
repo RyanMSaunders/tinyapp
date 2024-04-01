@@ -83,10 +83,10 @@ app.post("/register", (req, res) => {
   // console.log(userLookup(value.email));
 
   if (req.body.email == '' || req.body.password == '') {
-    res.sendStatus(404);
+    res.status(400).send('Email or password cannot be empty')
     res.redirect(`/urls`)
   } else if (userLookup(req.body.email) !== null) {
-    res.sendStatus(404);
+    res.status(400).send('Email is already in use')
     res.redirect(`/urls`)
   }
 
