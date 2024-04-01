@@ -129,6 +129,10 @@ app.post("/urls/:id/edit", (req, res) => {
 
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 // when user ... the register page is rendered in HTML
 app.get("/register", (req, res) =>{
   res.render("register");
