@@ -59,10 +59,8 @@ app.post("/login", (req, res) => {
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
-    res.redirect(`/urls`)
   } else if (userLookup(req.body.email) == null) {
     res.status(403).send('Email does not exist')
-    res.redirect(`/urls`)
   } else if (user.password !== req.body.password) {
     res.status(403).send('Password does not match')
   } 
@@ -82,10 +80,8 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
-    res.redirect(`/urls`)
   } else if (userLookup(req.body.email) !== null) {
     res.status(400).send('Email is already in use')
-    res.redirect(`/urls`)
   }
 
   let userId = generateRandomString();
