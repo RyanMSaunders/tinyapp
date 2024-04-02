@@ -36,6 +36,11 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
+  user3RandomID: {
+    id: "user3RandomID",
+    email: "ryan@gmail.com",
+    password: "fun",
+  },
 };
 
 
@@ -50,6 +55,12 @@ app.post("/urls", (req, res) => {
   console.log("Test, ", req.body.longURL); 
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
+
+  if (!req.cookies["user"]) {
+    res.status(400).send("You cannot shorten the URL because you are not logged in!");
+  }
+  
+
   res.redirect(`/urls/${id}`); // 
 });
 
@@ -67,6 +78,11 @@ app.post("/login", (req, res) => {
 
   res.cookie('user', user)
   res.redirect(`/urls`); // 
+
+  /* 
+  possible implementation in case bug where I only need the unique id
+  res.cookie('user_id', user.id)
+  */
 });
 
 // When user clicks on logout button, their username cookie is deleted, and user is redirected to /login page
@@ -114,6 +130,12 @@ app.get("/login", (req, res) => {
   const templateVars = { 
     user: req.cookies["user"],
   };
+
+  if (req.cookies["user"]) {
+    res.redirect(`/urls`);
+  }
+
+
   res.render("login", templateVars);
 });
 
@@ -128,6 +150,11 @@ app.get("/register", (req, res) =>{
   const templateVars = { 
     user: req.cookies["user"],
   };
+
+  if (req.cookies["user"]) {
+    res.redirect(`/urls`);
+  }
+
   res.render("register", templateVars);
 
 })
@@ -135,7 +162,11 @@ app.get("/register", (req, res) =>{
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
+  
   const longURL = urlDatabase[id];
+  if (!longURL) {
+    res.status(400).send('Shortened URL does not exist')
+  }
   res.redirect(longURL);
 });
 
@@ -160,6 +191,11 @@ app.get("/urls/new", (req, res) => {
   const templateVars = { 
     user: req.cookies["user"],
   };
+
+  if (!req.cookies["user"]) {
+    res.redirect(`/login`);
+  }
+  
   res.render("urls_new", templateVars);
 });
 
