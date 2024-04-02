@@ -63,10 +63,35 @@ app.post("/login", (req, res) => {
   // set a cookie named username to the value submitted in the request body via the login form
   // redirect the browser back to the /urls page
   // const value = req.body.username
-  const user = req.cookies["user_id"]
-  console.log(user);
+  // const user = req.cookies["user"]
   // const value = req.cookies["user_id"]["id"]
   // console.log(value)
+/// req.body is an object of username and password coming in from /login
+/// 
+let user = userLookup(req.body.email)
+// console.log(user.password);
+
+  if (req.body.email == '' || req.body.password == '') {
+    res.status(400).send('Email or password cannot be empty')
+    res.redirect(`/urls`)
+  } else if (userLookup(req.body.email) == null) {
+    res.status(403).send('Email does not exist')
+    res.redirect(`/urls`)
+  } else if (user.password !== req.body.password) {
+    //COMPARING PASSWORDS
+    res.status(403).send('Password does not match')
+  } 
+    // console.log(userLookup(req.body.email));
+    // console.log(req.body.email);
+    // let user = userLookup(req.body.email);
+  //   res.cookie('user', user)
+  //   res.redirect(`/urls`)
+  // }
+  
+  // let user = userLookup(req.body.email);
+  // users[userId] = {id: userId, email: req.body.email, password: req.body.password};
+  // const user = users[userId]
+
   res.cookie('user', user)
   res.redirect(`/urls`); // 
 });
@@ -74,7 +99,7 @@ app.post("/login", (req, res) => {
 // When user clicks on logout button, their username cookie is deleted, and user is redirected to /urls page
 app.post("/logout", (req, res) => {
   res.clearCookie('user')
-  res.redirect(`/urls`); // 
+  res.redirect(`/login`); // 
 });
 
 // when user enters information into email and password fields, 
@@ -93,11 +118,6 @@ app.post("/register", (req, res) => {
   let userId = generateRandomString();
   users[userId] = {id: userId, email: req.body.email, password: req.body.password};
   const value = users[userId]
-  
-  
-  
-  // console.log(userLookup(value.email));
-  // console.log(users);
 
   res.cookie('user', value)
   res.redirect(`/urls`); // 
@@ -131,6 +151,11 @@ app.post("/urls/:id/edit", (req, res) => {
 
 app.get("/login", (req, res) => {
   res.render("login");
+});
+
+app.get("/logout", (req, res) => {
+  res.clearCookie('user')
+  res.redirect(`/login`); // 
 });
 
 // when user ... the register page is rendered in HTML
