@@ -3,7 +3,7 @@
 
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080; 
 
 app.set("view engine", "ejs");
 
@@ -12,7 +12,6 @@ function generateRandomString() {
 }
 
 function userLookup(email) {
-  
   for (user in users) {
     if (users[user].email == email) {
       return users[user]
@@ -37,10 +36,8 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
-
 };
 
-// console.log(userLookup("user2@example.com"));
 
 app.use(express.urlencoded({ extended: true }));
 const cookieParser = require('cookie-parser');
@@ -50,26 +47,15 @@ app.use(cookieParser());
 // When user enters longURL on page urls_new and clicks SUBMIT, that longURL is added to urlDatabase along with an assinged short URL.
 // User is then redirected to the urls_show page
 app.post("/urls", (req, res) => {
-  console.log("Test, ", req.body.longURL); // Log the POST request body to the console
+  console.log("Test, ", req.body.longURL); 
   let id = generateRandomString();
-  // console.log(id)
   urlDatabase[id] = req.body.longURL;
-  // console.log(urlDatabase)
   res.redirect(`/urls/${id}`); // 
 });
 
-// When user enters login info in _header, a username cookie is set, and user is redirected to /urls page
+// When user enters login info in /login, a user {object} cookie is set, and user is redirected to /urls page
 app.post("/login", (req, res) => {
-  // set a cookie named username to the value submitted in the request body via the login form
-  // redirect the browser back to the /urls page
-  // const value = req.body.username
-  // const user = req.cookies["user"]
-  // const value = req.cookies["user_id"]["id"]
-  // console.log(value)
-/// req.body is an object of username and password coming in from /login
-/// 
-let user = userLookup(req.body.email)
-// console.log(user.password);
+  let user = userLookup(req.body.email)
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
@@ -78,35 +64,22 @@ let user = userLookup(req.body.email)
     res.status(403).send('Email does not exist')
     res.redirect(`/urls`)
   } else if (user.password !== req.body.password) {
-    //COMPARING PASSWORDS
     res.status(403).send('Password does not match')
   } 
-    // console.log(userLookup(req.body.email));
-    // console.log(req.body.email);
-    // let user = userLookup(req.body.email);
-  //   res.cookie('user', user)
-  //   res.redirect(`/urls`)
-  // }
-  
-  // let user = userLookup(req.body.email);
-  // users[userId] = {id: userId, email: req.body.email, password: req.body.password};
-  // const user = users[userId]
 
   res.cookie('user', user)
   res.redirect(`/urls`); // 
 });
 
-// When user clicks on logout button, their username cookie is deleted, and user is redirected to /urls page
+// When user clicks on logout button, their username cookie is deleted, and user is redirected to /login page
 app.post("/logout", (req, res) => {
   res.clearCookie('user')
   res.redirect(`/login`); // 
 });
 
-// when user enters information into email and password fields, 
+// when user enters information into email and password fields on register page, user {object} cookie is set 
+// User is redirected to /urls
 app.post("/register", (req, res) => {
-    
-  // console.log(userLookup(value.email));
-
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
     res.redirect(`/urls`)
@@ -124,11 +97,8 @@ app.post("/register", (req, res) => {
 })
 
 
-
 // when user clicks DELETE, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/delete", (req, res) => {
-  // removes a URL resource
-  //After the resource has been deleted, redirect the client back to the urls_index page ("/urls").
   const id = req.params.id
   delete urlDatabase[id]
   res.redirect(`/urls`); // 
@@ -137,30 +107,32 @@ app.post("/urls/:id/delete", (req, res) => {
 
 // when user enters updated URL and clicks SUBMIT, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/edit", (req, res) => {
-  // update the value of your stored long URL based on req body
-  // redirect the client back to /urls
   const id = req.params.id;
-  // console.log(req.body)
-  
-  // console.log(urlDatabase)
   urlDatabase[id] = req.body.test
-  // console.log(req.body)
   res.redirect(`/urls`); // 
 
 });
 
+// when user clicks Login in _header, login page is rendered
 app.get("/login", (req, res) => {
-  res.render("login");
+  const templateVars = { 
+    user: req.cookies["user"],
+  };
+  res.render("login", templateVars);
 });
 
+// when user clicks Logout in _header, user {object} cookie is cleared and user is redirected to login page
 app.get("/logout", (req, res) => {
   res.clearCookie('user')
   res.redirect(`/login`); // 
 });
 
-// when user ... the register page is rendered in HTML
+// when user clicks on register button in _header, the register page is rendered in HTML
 app.get("/register", (req, res) =>{
-  res.render("register");
+  const templateVars = { 
+    user: req.cookies["user"],
+  };
+  res.render("register", templateVars);
 
 })
 
@@ -171,16 +143,6 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-// when user access page /hello, sends  hello
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-
-// when user access page /hello, sends bolded hello
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 // when user access page /urls.json, returns parsed urlDatabase
 app.get("/urls.json", (req, res) => {
@@ -194,9 +156,6 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: req.cookies["user"],
   };
-  // const userID =req.cookies["user_id"]["id"];
-  // templateVars[userID] = req.cookies["user_id"];
-  // console.log(templateVars);
   res.render("urls_index", templateVars);
 });
 
@@ -218,14 +177,22 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// when user accesses urls/:id, redirect to urls_show 
-// app.get("/urls/:id", (req, res) => {
-//   let id = req.params.id;
-//   res.redirect(`/urls/${id}`); // 
-// });
-
 // communicates to console that server is listening on port 8080
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
+});
+
+
+/////////////
+
+// when user accesses page /hello, sends  hello
+app.get("/", (req, res) => {
+  res.send("Hello!");
+});
+
+
+// when user access page /hello, sends bolded hello
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
