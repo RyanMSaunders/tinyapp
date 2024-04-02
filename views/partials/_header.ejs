@@ -21,33 +21,26 @@
     </div>
 
     <% if (!user) { %>
-      <form method="GET" action="/login">
-      <button type="submit" class="btn btn-primary">Login</button>
-      </form>
-      <form method="GET" action="/register">
-        <button type="submit" class="btn btn-primary">Register</button>
-      </form>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <form method="GET" action="/login">
+            <a class="nav-item nav-link" href="/login">Login</a>
+          </form>
+          <form method="GET" action="/register">
+            <a class="nav-item nav-link" href="/register">Register</a>
+          </form>
+        </div>
+      </div>
     <% } else { %>
-      <form method="GET" action="/logout">
-      <button type="submit" class="btn btn-primary">Logout</button>
-      </form>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <form method="GET" action="/logout">
+            <h6 class="nav-item ">Logged In As: <%= user.email %></h6>
+            <a class="nav-item nav-link " href="/logout">Logout</a>
+          </form>
+        </div>
+      </div>   
     <% } %>
     
-    
-
-
-    <!-- <% if (user) { %>
-      <form method="POST" action="/logout">
-        <h5>Logged In As: <%= user.email %></h5>
-        <button type="submit" class="btn btn-primary">Logout</button>
-      </form>
-    <% } else { %>
-      <form method="POST" action="/login">
-        <input type="text" name="user" placeholder="user" />
-        <button type="submit" class="btn btn-primary">Login</button>
-      </form>
-
-
-    <% } %> -->
   </nav>
 </header>
