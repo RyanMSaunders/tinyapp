@@ -20,12 +20,59 @@ function userLookup(email) {
   return null
 }
 
+// Create a function named urlsForUser(id) which returns the URLs 
+// where the userID is equal to the id of the currently logged-in user.
+function urlsForUser(id) {
+  // urlDatabase[id]["userID"] = req.cookies["user"].id;
+  // userID from database 
+  // id of currently logged in user from cookies // req.cookies["user"].id
+
+// loop throughh the urlDatabase
+// check the userID key for equality with id input
+  const usersUrls = {}  
+  let count = 0 
+  const urlDatabaseKeys = Object.keys(urlDatabase)
+  // console.log(urlDatabaseKeys)
+
+
+  for (index in urlDatabase){
+    // console.log(urlDatabase[index].userID);
+    
+    if (id == urlDatabase[index].userID) {
+      // add longURL to userUrls object
+      // console.log(urlDatabaseKeys[count]);
+      usersUrls[urlDatabaseKeys[count]] = urlDatabase[index].longURL;
+      count += 1
+    }
+    // how do i access the key of each object in the urlDatabase object
+    // console.log(usersUrls);
+
+  }
+  // console.log(usersUrls);
+  return usersUrls;
+}
+
+
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
+
+
 const users = {
+  aJ48lW: {
+    id: "aJ48lW",
+    email: "ryan@gmail.com",
+    password: "fun"
+  },
+
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
@@ -38,8 +85,8 @@ const users = {
   },
   user3RandomID: {
     id: "user3RandomID",
-    email: "ryan@gmail.com",
-    password: "fun",
+    email: "ryans@gmail.com",
+    password: "funs",
   },
 };
 
@@ -52,9 +99,10 @@ app.use(cookieParser());
 // When user enters longURL on page urls_new and clicks SUBMIT, that longURL is added to urlDatabase along with an assinged short URL.
 // User is then redirected to the urls_show page
 app.post("/urls", (req, res) => {
-  console.log("Test, ", req.body.longURL); 
   let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id] = {longURL: req.body.longURL}; // takes longurl input from url-new page and updates URL Database
+  urlDatabase[id]["userID"] = req.cookies["user"].id;
+  // console.log('test', urlDatabase);
 
   if (!req.cookies["user"]) {
     res.status(400).send("You cannot shorten the URL because you are not logged in!");
@@ -120,10 +168,17 @@ app.post("/urls/:id/delete", (req, res) => {
 // when user enters updated URL and clicks SUBMIT, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/edit", (req, res) => {
   const id = req.params.id;
-  urlDatabase[id] = req.body.test
+  urlDatabase[id].longURL = req.body.edit 
+  // console.log(req.body)
   res.redirect(`/urls`); // 
 
 });
+
+
+
+////////////////////////////////////////////////////////////////
+
+
 
 // when user clicks Login in _header, login page is rendered
 app.get("/login", (req, res) => {
@@ -161,12 +216,17 @@ app.get("/register", (req, res) =>{
 
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
-  const id = req.params.id;
+// need to check for if requested :id is in users registered id's
+
   
-  const longURL = urlDatabase[id];
+
+  const id = req.params.id; // it can identify the correct it
+  const longURL = urlDatabase[id].longURL; 
+  
   if (!longURL) {
     res.status(400).send('Shortened URL does not exist')
   }
+  // console.log("test 3", longURL)
   res.redirect(longURL);
 });
 
@@ -176,13 +236,31 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// when user accesses /urls, renders urls_index
+// when user accesses /urls, renders urls_index 
 app.get("/urls", (req, res) => {
-  
+  // only show the logged in users urls
+  // filter the database and pass in the filtered urls to templateVars
+
+  if (!req.cookies["user"]) {
+    res.status(400).send('<a href="/login">Please Log In</a>')
+  }
+  const usersUrls = urlsForUser(req.cookies["user"].id)
+  console.log(usersUrls);
+
   const templateVars = { 
-    urls: urlDatabase,
+    urls: usersUrls,
     user: req.cookies["user"],
   };
+
+  // theres something goin on in template vars that wont allow template vars to pass long url 
+  //<%= urls[id].longURL %>
+  // i had to change urls[id].longURL to urls[id]
+
+ 
+  
+  
+
+
   res.render("urls_index", templateVars);
 });
 
@@ -190,7 +268,11 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const templateVars = { 
     user: req.cookies["user"],
+    // I need to somehow aquire the user id and paste into longURL: urlDatabase[req.params.id].longURL,
+    // longURL: urlDatabase[user.id].longURL,
   };
+
+  // console.log(templateVars)
 
   if (!req.cookies["user"]) {
     res.redirect(`/login`);
@@ -201,11 +283,19 @@ app.get("/urls/new", (req, res) => {
 
 // when user accesses /urls/:id, renders urls_show page with HTML updated with templateVars
 app.get("/urls/:id", (req, res) => { 
+  
   const templateVars = { 
+    urls: urlDatabase,
     id: req.params.id, 
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[req.params.id].longURL,
     user: req.cookies["user"]
   };
+  // console.log(templateVars.longURL); // templateVars.longURL is coming up undefined. Which is why its not rendering in the show template
+  // console.log(urlDatabase[req.params.id]) // also undefined
+  // console.log(req.params.id) // y7lb6n, this works.
+  // console.log(urlDatabase[req.params.id]); // 67ybtml, https://github.com/RyanMSaunders/tinyapp
+
+  
   res.render("urls_show", templateVars);
 });
 
