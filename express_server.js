@@ -217,17 +217,33 @@ app.get("/register", (req, res) =>{
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
 // need to check for if requested :id is in users registered id's
+// check usersURLS
+// create Object.keys() array
+// filter array and check if truthy
+// if truthy then continue with defining longURL from urlDatabase
+// alternative is to define longURL from usersURLs
 
   
-
-  const id = req.params.id; // it can identify the correct it
-  const longURL = urlDatabase[id].longURL; 
   
-  if (!longURL) {
-    res.status(400).send('Shortened URL does not exist')
+  if (!req.cookies["user"]) {
+    res.status(400).send('<a href="/login">Please Log In</a>');
   }
-  // console.log("test 3", longURL)
-  res.redirect(longURL);
+
+  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLsKeys = Object.keys(userURLs)
+
+  if (!userURLsKeys.includes(req.params.id)) {
+      res.status(400).send('You have not added this url!');
+    } else {
+    const id = req.params.id; // it can identify the correct it
+    const longURL = urlDatabase[id].longURL; 
+    
+    if (!longURL) {
+      res.status(400).send('Shortened URL does not exist')
+    }
+    // console.log("test 3", longURL)
+    res.redirect(longURL);
+  }
 });
 
 
