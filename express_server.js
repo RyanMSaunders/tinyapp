@@ -171,7 +171,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 
   const userURLs = urlsForUser(req.cookies["user"].id)
-  const userURLsKeys = Object.keys(userURLs) // I think theres some problem here with reading id of undefined
+  const userURLsKeys = Object.keys(userURLs) 
 
   if (!userURLsKeys.includes(id)) {
       res.status(400).send('You have not added this url!');
@@ -186,8 +186,24 @@ app.post("/urls/:id/delete", (req, res) => {
 // when user enters updated URL and clicks SUBMIT, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/edit", (req, res) => {
   
-  
-  const id = req.params.id;
+  const id = req.params.id
+  const urlDatabaseKeys = Object.keys(urlDatabase)
+  if (!urlDatabaseKeys.includes(id)) {
+    res.status(400).send('This URL does not exist!');
+  }
+
+  if (!req.cookies["user"]) {
+    res.status(400).send('<a href="/login">Please Log In</a>');
+  }
+
+  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLsKeys = Object.keys(userURLs) 
+
+  if (!userURLsKeys.includes(id)) {
+      res.status(400).send('You have not added this url!');
+  } 
+
+  // const id = req.params.id;
   urlDatabase[id].longURL = req.body.edit 
   res.redirect(`/urls`); // 
 
