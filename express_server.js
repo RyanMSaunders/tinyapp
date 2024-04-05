@@ -7,6 +7,16 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 
+app.use(express.urlencoded({ extended: true }));
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
+const bcrypt = require("bcryptjs");
+const salt = bcrypt.genSaltSync(10);
+
+
+
 function generateRandomString() {
   return Math.random().toString(36).substring(6)
 }
@@ -88,12 +98,14 @@ const users = {
     email: "ryans@gmail.com",
     password: "funs",
   },
+  user4RandomID: {
+    id: "user4RandomID",
+    email: "r@gmail.com",
+    password: "$2a$10$P9ek5RCeILBWf/O/OXZiteAU0pNGiwmIhoKdPWFc1nsFtAx3FpGXS", // '1234'
+  },
 };
 
 
-app.use(express.urlencoded({ extended: true }));
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
 
 
 // When user enters longURL on page urls_new and clicks SUBMIT, that longURL is added to urlDatabase along with an assinged short URL.
@@ -114,15 +126,27 @@ app.post("/urls", (req, res) => {
 
 // When user enters login info in /login, a user {object} cookie is set, and user is redirected to /urls page
 app.post("/login", (req, res) => {
+  // check if users password is correct using bcrypt.compareSyn(plaintext, hashedPassword)
+  
   let user = userLookup(req.body.email)
+  let userPassword = user.password
+  console.log(userPassword);
+  console.log(req.body.password);
+
+  if(!bcrypt.compareSync(req.body.password, userPassword)) {
+    res.status(403).send('Password does not match')
+  }
+
+  // i think i need to create a new user with a properly hashed password to check this
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
   } else if (userLookup(req.body.email) == null) {
     res.status(403).send('Email does not exist')
-  } else if (user.password !== req.body.password) {
-    res.status(403).send('Password does not match')
   } 
+  // else if (user.password !== req.body.password) {
+  //   res.status(403).send('Password does not match')
+  // } 
 
   res.cookie('user', user)
   res.redirect(`/urls`); // 
@@ -142,6 +166,11 @@ app.post("/logout", (req, res) => {
 // when user enters information into email and password fields on register page, user {object} cookie is set 
 // User is redirected to /urls
 app.post("/register", (req, res) => {
+  
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(req.body.password, salt);
+  console.log('hash', hash);
+
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
   } else if (userLookup(req.body.email) !== null) {
@@ -149,8 +178,9 @@ app.post("/register", (req, res) => {
   }
 
   let userId = generateRandomString();
-  users[userId] = {id: userId, email: req.body.email, password: req.body.password};
+  users[userId] = {id: userId, email: req.body.email, password: hash};
   const value = users[userId]
+
 
   res.cookie('user', value)
   res.redirect(`/urls`); // 
@@ -202,9 +232,13 @@ app.post("/urls/:id/edit", (req, res) => {
   if (!userURLsKeys.includes(id)) {
       res.status(400).send('You have not added this url!');
   } 
-
   // const id = req.params.id;
-  urlDatabase[id].longURL = req.body.edit 
+  if (req.body.edit != '') {
+    urlDatabase[id].longURL = req.body.edit 
+  } else {
+    res.status(400).send('Long url cannot be an empty string');
+  }
+  
   res.redirect(`/urls`); // 
 
 });
@@ -334,8 +368,13 @@ app.get("/urls/new", (req, res) => {
 
 // when user accesses /urls/:id, renders urls_show page with HTML updated with templateVars
 app.get("/urls/:id", (req, res) => { 
+  const id = req.params.id
+  const urlDatabaseKeys = Object.keys(urlDatabase)
+  if (!urlDatabaseKeys.includes(id)) {
+    res.status(400).send('This URL does not exist!');
+  }
+
   if (!req.cookies["user"]) {
-    console.log('hello');
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
   
