@@ -9,11 +9,19 @@ app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
 
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+// const cookieParser = require('cookie-parser');
+// app.use(cookieParser());
 
 const bcrypt = require("bcryptjs");
-const salt = bcrypt.genSaltSync(10);
+
+const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'whatever',
+  keys: ['hellohello'],
+
+  // Cookie Options
+  // maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 
 
@@ -113,10 +121,10 @@ const users = {
 app.post("/urls", (req, res) => {
   let id = generateRandomString();
   urlDatabase[id] = {longURL: req.body.longURL}; // takes longurl input from url-new page and updates URL Database
-  urlDatabase[id]["userID"] = req.cookies["user"].id;
+  urlDatabase[id]["userID"] = req.session.user.id;
   // console.log('test', urlDatabase);
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send("You cannot shorten the URL because you are not logged in!");
   }
   
@@ -130,25 +138,24 @@ app.post("/login", (req, res) => {
   
   let user = userLookup(req.body.email)
   let userPassword = user.password
-  console.log(userPassword);
-  console.log(req.body.password);
-
-  if(!bcrypt.compareSync(req.body.password, userPassword)) {
-    res.status(403).send('Password does not match')
-  }
-
-  // i think i need to create a new user with a properly hashed password to check this
+  // console.log(userPassword);
+  // console.log(req.body.password);
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty')
   } else if (userLookup(req.body.email) == null) {
     res.status(403).send('Email does not exist')
   } 
+  
+  if(!bcrypt.compareSync(req.body.password, userPassword)) {
+    res.status(403).send('Password does not match')
+  }
+  
   // else if (user.password !== req.body.password) {
   //   res.status(403).send('Password does not match')
   // } 
 
-  res.cookie('user', user)
+  req.session.user = user;
   res.redirect(`/urls`); // 
 
   /* 
@@ -159,7 +166,7 @@ app.post("/login", (req, res) => {
 
 // When user clicks on logout button, their username cookie is deleted, and user is redirected to /login page
 app.post("/logout", (req, res) => {
-  res.clearCookie('user')
+  req.session = null;
   res.redirect(`/login`); // 
 });
 
@@ -182,7 +189,7 @@ app.post("/register", (req, res) => {
   const value = users[userId]
 
 
-  res.cookie('user', value)
+  req.session.user = value;
   res.redirect(`/urls`); // 
 })
 
@@ -196,11 +203,11 @@ app.post("/urls/:id/delete", (req, res) => {
     res.status(400).send('This URL does not exist!');
   }
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLs = urlsForUser(req.session.user.id)
   const userURLsKeys = Object.keys(userURLs) 
 
   if (!userURLsKeys.includes(id)) {
@@ -222,11 +229,11 @@ app.post("/urls/:id/edit", (req, res) => {
     res.status(400).send('This URL does not exist!');
   }
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLs = urlsForUser(req.session.user.id)
   const userURLsKeys = Object.keys(userURLs) 
 
   if (!userURLsKeys.includes(id)) {
@@ -252,10 +259,10 @@ app.post("/urls/:id/edit", (req, res) => {
 // when user clicks Login in _header, login page is rendered
 app.get("/login", (req, res) => {
   const templateVars = { 
-    user: req.cookies["user"],
+    user: req.session.user,
   };
 
-  if (req.cookies["user"]) {
+  if (req.session.user) {
     res.redirect(`/urls`);
   }
 
@@ -265,17 +272,17 @@ app.get("/login", (req, res) => {
 
 // when user clicks Logout in _header, user {object} cookie is cleared and user is redirected to login page
 app.get("/logout", (req, res) => {
-  res.clearCookie('user')
+  req.session = null;
   res.redirect(`/login`); // 
 });
 
 // when user clicks on register button in _header, the register page is rendered in HTML
 app.get("/register", (req, res) =>{
   const templateVars = { 
-    user: req.cookies["user"],
+    user: req.session.user,
   };
 
-  if (req.cookies["user"]) {
+  if (req.session.user) {
     res.redirect(`/urls`);
   }
 
@@ -294,11 +301,11 @@ app.get("/u/:id", (req, res) => {
 
   
   
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLs = urlsForUser(req.session.user.id)
   const userURLsKeys = Object.keys(userURLs)
 
   if (!userURLsKeys.includes(req.params.id)) {
@@ -326,15 +333,15 @@ app.get("/urls", (req, res) => {
   // only show the logged in users urls
   // filter the database and pass in the filtered urls to templateVars
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>')
   }
-  const usersUrls = urlsForUser(req.cookies["user"].id)
+  const usersUrls = urlsForUser(req.session.user.id)
   // console.log(usersUrls);
 
   const templateVars = { 
     urls: usersUrls,
-    user: req.cookies["user"],
+    user: req.session.user,
   };
 
   // theres something goin on in template vars that wont allow template vars to pass long url 
@@ -352,14 +359,14 @@ app.get("/urls", (req, res) => {
 // when user accesses /urls/new, renders urls_new
 app.get("/urls/new", (req, res) => {
   const templateVars = { 
-    user: req.cookies["user"],
+    user: req.session.user,
     // I need to somehow aquire the user id and paste into longURL: urlDatabase[req.params.id].longURL,
     // longURL: urlDatabase[user.id].longURL,
   };
 
   // console.log(templateVars)
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.redirect(`/login`);
   }
   
@@ -374,7 +381,7 @@ app.get("/urls/:id", (req, res) => {
     res.status(400).send('This URL does not exist!');
   }
 
-  if (!req.cookies["user"]) {
+  if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
   
@@ -382,7 +389,7 @@ app.get("/urls/:id", (req, res) => {
     urls: urlDatabase,
     id: req.params.id, 
     longURL: urlDatabase[req.params.id].longURL,
-    user: req.cookies["user"]
+    user: req.session.user
   };
   // console.log(templateVars.longURL); // templateVars.longURL is coming up undefined. Which is why its not rendering in the show template
   // console.log(urlDatabase[req.params.id]) // also undefined
