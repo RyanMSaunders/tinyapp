@@ -159,17 +159,36 @@ app.post("/register", (req, res) => {
 
 // when user clicks DELETE, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/delete", (req, res) => {
+  
   const id = req.params.id
+  const urlDatabaseKeys = Object.keys(urlDatabase)
+  if (!urlDatabaseKeys.includes(id)) {
+    res.status(400).send('This URL does not exist!');
+  }
+
+  if (!req.cookies["user"]) {
+    res.status(400).send('<a href="/login">Please Log In</a>');
+  }
+
+  const userURLs = urlsForUser(req.cookies["user"].id)
+  const userURLsKeys = Object.keys(userURLs) // I think theres some problem here with reading id of undefined
+
+  if (!userURLsKeys.includes(id)) {
+      res.status(400).send('You have not added this url!');
+  } 
+
+  
   delete urlDatabase[id]
-  res.redirect(`/urls`); // 
+  res.redirect(`/urls`); 
 
 });
 
 // when user enters updated URL and clicks SUBMIT, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/edit", (req, res) => {
+  
+  
   const id = req.params.id;
   urlDatabase[id].longURL = req.body.edit 
-  // console.log(req.body)
   res.redirect(`/urls`); // 
 
 });
@@ -261,7 +280,7 @@ app.get("/urls", (req, res) => {
     res.status(400).send('<a href="/login">Please Log In</a>')
   }
   const usersUrls = urlsForUser(req.cookies["user"].id)
-  console.log(usersUrls);
+  // console.log(usersUrls);
 
   const templateVars = { 
     urls: usersUrls,
@@ -299,6 +318,10 @@ app.get("/urls/new", (req, res) => {
 
 // when user accesses /urls/:id, renders urls_show page with HTML updated with templateVars
 app.get("/urls/:id", (req, res) => { 
+  if (!req.cookies["user"]) {
+    console.log('hello');
+    res.status(400).send('<a href="/login">Please Log In</a>');
+  }
   
   const templateVars = { 
     urls: urlDatabase,
