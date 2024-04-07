@@ -1,4 +1,4 @@
-const userLookup = require('./helpers');
+const getUserByEmail = require('./helpers');
 
 
 const express = require("express");
@@ -29,7 +29,7 @@ const generateRandomString = function() {
   return Math.random().toString(36).substring(6);
 };
 
-// function userLookup(email, database) {
+// function getUserByEmail(email, database) {
 //   for (user in database) {
 //     if (database[user].email == email) {
 //       return database[user]
@@ -145,11 +145,11 @@ app.post("/login", (req, res) => {
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty');
-  } else if (userLookup(req.body.email, users) == null) {
+  } else if (getUserByEmail(req.body.email, users) == null) {
     res.status(403).send('Email does not exist');
   } 
-  
-  let user = userLookup(req.body.email, users);
+
+  let user = getUserByEmail(req.body.email, users);
   let userPassword = user.password;
 
   if(!bcrypt.compareSync(req.body.password, userPassword)) {
@@ -186,7 +186,7 @@ app.post("/register", (req, res) => {
 
   if (req.body.email == '' || req.body.password == '') {
     res.status(400).send('Email or password cannot be empty');
-  } else if (userLookup(req.body.email, users) !== null) {
+  } else if (getUserByEmail(req.body.email, users) !== null) {
     res.status(400).send('Email is already in use');
   }
 
