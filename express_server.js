@@ -1,9 +1,9 @@
-
+const userLookup = require('./helpers');
 
 
 const express = require("express");
 const app = express();
-const PORT = 8080; 
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 
@@ -21,54 +21,50 @@ app.use(cookieSession({
 
   // Cookie Options
   // maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
+}));
 
 
 
-function generateRandomString() {
-  return Math.random().toString(36).substring(6)
-}
+const generateRandomString = function() {
+  return Math.random().toString(36).substring(6);
+};
 
-function userLookup(email) {
-  for (user in users) {
-    if (users[user].email == email) {
-      return users[user]
-    }
-  }
-  return null
-}
+// function userLookup(email, database) {
+//   for (user in database) {
+//     if (database[user].email == email) {
+//       return database[user]
+//     }
+//   }
+//   return null
+// }
 
 // Create a function named urlsForUser(id) which returns the URLs 
 // where the userID is equal to the id of the currently logged-in user.
-function urlsForUser(id) {
-  // urlDatabase[id]["userID"] = req.cookies["user"].id;
-  // userID from database 
-  // id of currently logged in user from cookies // req.cookies["user"].id
-
-// loop throughh the urlDatabase
-// check the userID key for equality with id input
-  const usersUrls = {}  
-  let count = 0 
-  const urlDatabaseKeys = Object.keys(urlDatabase)
+const urlsForUser = function(id) {
+  const usersUrls = {};
+  let count = 0;
+  const urlDatabaseKeys = Object.keys(urlDatabase);
   // console.log(urlDatabaseKeys)
+  for (let index in urlDatabase){
+    // console.log(index);
+    // console.log(urlDatabase[index].userID); // only recognizing "aJ48lW"
+    if (id === urlDatabase[index].userID) {
+      console.log('test', urlDatabase[index].userID); // "user4RandomID"
+      console.log(count);
+      console.log('test2', index); // i want this to be a short url
 
 
-  for (index in urlDatabase){
-    // console.log(urlDatabase[index].userID);
-    
-    if (id == urlDatabase[index].userID) {
       // add longURL to userUrls object
       // console.log(urlDatabaseKeys[count]);
-      usersUrls[urlDatabaseKeys[count]] = urlDatabase[index].longURL;
-      count += 1
+      usersUrls[index] = urlDatabase[index].longURL;  // adds keys value pair to userURLS
+      count += 1;
     }
     // how do i access the key of each object in the urlDatabase object
     // console.log(usersUrls);
-
   }
   // console.log(usersUrls);
   return usersUrls;
-}
+};
 
 
 const urlDatabase = {
@@ -81,6 +77,8 @@ const urlDatabase = {
     userID: "aJ48lW",
   },
 };
+
+// console.log(urlsForUser("aJ48lW"));
 
 
 
@@ -110,7 +108,7 @@ const users = {
     id: "user4RandomID",
     email: "r@gmail.com",
     password: "$2a$10$P9ek5RCeILBWf/O/OXZiteAU0pNGiwmIhoKdPWFc1nsFtAx3FpGXS", // '1234'
-  },
+  }
 };
 
 
@@ -119,15 +117,21 @@ const users = {
 // When user enters longURL on page urls_new and clicks SUBMIT, that longURL is added to urlDatabase along with an assinged short URL.
 // User is then redirected to the urls_show page
 app.post("/urls", (req, res) => {
-  let id = generateRandomString();
+  let id = generateRandomString(); // id here is 'short url'
   urlDatabase[id] = {longURL: req.body.longURL}; // takes longurl input from url-new page and updates URL Database
   urlDatabase[id]["userID"] = req.session.user.id;
-  // console.log('test', urlDatabase);
+  // console.log('test', urlDatabase); 
+  // console.log(req.session.user.id);
+  /// Do these need to be added to USERS urls rather than URL database?
 
   if (!req.session.user) {
     res.status(400).send("You cannot shorten the URL because you are not logged in!");
   }
   
+// Why, when there are existing urls in the urlDatabase, does my code break
+// why does it give me a 'you have not added this url' message (check u/:id)
+// why does it add the first url id's in the url database
+// why when I click delete does the short url change in urls_index but the long url remains
 
   res.redirect(`/urls/${id}`); // 
 });
@@ -136,20 +140,22 @@ app.post("/urls", (req, res) => {
 app.post("/login", (req, res) => {
   // check if users password is correct using bcrypt.compareSyn(plaintext, hashedPassword)
   
-  let user = userLookup(req.body.email)
-  let userPassword = user.password
   // console.log(userPassword);
   // console.log(req.body.password);
 
   if (req.body.email == '' || req.body.password == '') {
-    res.status(400).send('Email or password cannot be empty')
-  } else if (userLookup(req.body.email) == null) {
-    res.status(403).send('Email does not exist')
+    res.status(400).send('Email or password cannot be empty');
+  } else if (userLookup(req.body.email, users) == null) {
+    res.status(403).send('Email does not exist');
   } 
   
+  let user = userLookup(req.body.email, users);
+  let userPassword = user.password;
+
   if(!bcrypt.compareSync(req.body.password, userPassword)) {
-    res.status(403).send('Password does not match')
+    res.status(403).send('Password does not match');
   }
+  
   
   // else if (user.password !== req.body.password) {
   //   res.status(403).send('Password does not match')
@@ -176,29 +182,30 @@ app.post("/register", (req, res) => {
   
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(req.body.password, salt);
-  console.log('hash', hash);
+  // console.log('hash', hash);
 
   if (req.body.email == '' || req.body.password == '') {
-    res.status(400).send('Email or password cannot be empty')
-  } else if (userLookup(req.body.email) !== null) {
-    res.status(400).send('Email is already in use')
+    res.status(400).send('Email or password cannot be empty');
+  } else if (userLookup(req.body.email, users) !== null) {
+    res.status(400).send('Email is already in use');
   }
 
   let userId = generateRandomString();
   users[userId] = {id: userId, email: req.body.email, password: hash};
-  const value = users[userId]
-
+  const value = users[userId];
 
   req.session.user = value;
+  /// what is req.session.user = value
+  // res.cookie('user', value)
   res.redirect(`/urls`); // 
-})
+});
 
 
 // when user clicks DELETE, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/delete", (req, res) => {
   
-  const id = req.params.id
-  const urlDatabaseKeys = Object.keys(urlDatabase)
+  const id = req.params.id;
+  const urlDatabaseKeys = Object.keys(urlDatabase);
   if (!urlDatabaseKeys.includes(id)) {
     res.status(400).send('This URL does not exist!');
   }
@@ -207,24 +214,29 @@ app.post("/urls/:id/delete", (req, res) => {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.session.user.id)
-  const userURLsKeys = Object.keys(userURLs) 
+//////////
+  const userURLs = urlsForUser(req.session.user.id);
 
+  const userURLsKeys = Object.keys(userURLs);
+  // console.log(userURLsKeys);
   if (!userURLsKeys.includes(id)) {
       res.status(400).send('You have not added this url!');
   } 
+////////////
 
-  
-  delete urlDatabase[id]
+  delete urlDatabase[id];
   res.redirect(`/urls`); 
 
 });
 
 // when user enters updated URL and clicks SUBMIT, urlDatabase is updated and user is redirected to urls_index
 app.post("/urls/:id/edit", (req, res) => {
-  
-  const id = req.params.id
-  const urlDatabaseKeys = Object.keys(urlDatabase)
+  const id = req.params.id;
+
+  // console.log(req.body.edit);
+  // console.log(urlDatabase[id].longURL);
+
+  const urlDatabaseKeys = Object.keys(urlDatabase);
   if (!urlDatabaseKeys.includes(id)) {
     res.status(400).send('This URL does not exist!');
   }
@@ -233,21 +245,20 @@ app.post("/urls/:id/edit", (req, res) => {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.session.user.id)
-  const userURLsKeys = Object.keys(userURLs) 
+  const userURLs = urlsForUser(req.session.user.id);
+  const userURLsKeys = Object.keys(userURLs);
 
   if (!userURLsKeys.includes(id)) {
       res.status(400).send('You have not added this url!');
   } 
   // const id = req.params.id;
-  if (req.body.edit != '') {
-    urlDatabase[id].longURL = req.body.edit 
+  if (req.body.edit !== '') {
+    urlDatabase[id].longURL = req.body.edit; 
   } else {
     res.status(400).send('Long url cannot be an empty string');
   }
   
   res.redirect(`/urls`); // 
-
 });
 
 
@@ -260,6 +271,8 @@ app.post("/urls/:id/edit", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = { 
     user: req.session.user,
+    // why req.session.user?
+    // to render the login page with a header
   };
 
   if (req.session.user) {
@@ -288,45 +301,38 @@ app.get("/register", (req, res) =>{
 
   res.render("register", templateVars);
 
-})
+});
 
 /// when user clicks on shortened URL on the urls/:id page, it redirects to website via longURL
 app.get("/u/:id", (req, res) => {
-// need to check for if requested :id is in users registered id's
-// check usersURLS
-// create Object.keys() array
-// filter array and check if truthy
-// if truthy then continue with defining longURL from urlDatabase
-// alternative is to define longURL from usersURLs
-
-  
   
   if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
 
-  const userURLs = urlsForUser(req.session.user.id)
-  const userURLsKeys = Object.keys(userURLs)
+  const userURLs = urlsForUser(req.session.user.id);
+  const userURLsKeys = Object.keys(userURLs);
+  const id = req.params.id; // it can identify the correct it
+  const longURL = urlDatabase[id].longURL; 
+  // console.log(longURL);
 
   if (!userURLsKeys.includes(req.params.id)) {
       res.status(400).send('You have not added this url!');
-    } else {
-    const id = req.params.id; // it can identify the correct it
-    const longURL = urlDatabase[id].longURL; 
-    
-    if (!longURL) {
-      res.status(400).send('Shortened URL does not exist')
-    }
-    // console.log("test 3", longURL)
-    res.redirect(longURL);
   }
+  
+
+  if (!longURL) {
+    res.status(400).send('Shortened URL does not exist');
+  }
+  // console.log("test 3", longURL);
+  res.redirect(longURL);
 });
 
 
 // when user access page /urls.json, returns parsed urlDatabase
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
 // when user accesses /urls, renders urls_index 
 app.get("/urls", (req, res) => {
@@ -334,10 +340,12 @@ app.get("/urls", (req, res) => {
   // filter the database and pass in the filtered urls to templateVars
 
   if (!req.session.user) {
-    res.status(400).send('<a href="/login">Please Log In</a>')
+    res.status(400).send('<a href="/login">Please Log In</a>');
   }
-  const usersUrls = urlsForUser(req.session.user.id)
+  // console.log(req.session.user.id);
+  const usersUrls = urlsForUser(req.session.user.id); // is that it? needs to take email and database?
   // console.log(usersUrls);
+
 
   const templateVars = { 
     urls: usersUrls,
@@ -349,10 +357,6 @@ app.get("/urls", (req, res) => {
   // i had to change urls[id].longURL to urls[id]
 
  
-  
-  
-
-
   res.render("urls_index", templateVars);
 });
 
@@ -375,8 +379,8 @@ app.get("/urls/new", (req, res) => {
 
 // when user accesses /urls/:id, renders urls_show page with HTML updated with templateVars
 app.get("/urls/:id", (req, res) => { 
-  const id = req.params.id
-  const urlDatabaseKeys = Object.keys(urlDatabase)
+  const id = req.params.id;
+  const urlDatabaseKeys = Object.keys(urlDatabase);
   if (!urlDatabaseKeys.includes(id)) {
     res.status(400).send('This URL does not exist!');
   }
@@ -384,9 +388,8 @@ app.get("/urls/:id", (req, res) => {
   if (!req.session.user) {
     res.status(400).send('<a href="/login">Please Log In</a>');
   }
-  
   const templateVars = { 
-    urls: urlDatabase,
+    // urls: urlDatabase,
     id: req.params.id, 
     longURL: urlDatabase[req.params.id].longURL,
     user: req.session.user
@@ -395,7 +398,6 @@ app.get("/urls/:id", (req, res) => {
   // console.log(urlDatabase[req.params.id]) // also undefined
   // console.log(req.params.id) // y7lb6n, this works.
   // console.log(urlDatabase[req.params.id]); // 67ybtml, https://github.com/RyanMSaunders/tinyapp
-
   
   res.render("urls_show", templateVars);
 });
