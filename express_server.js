@@ -1,4 +1,4 @@
-const getUserByEmail = require('./helpers');
+const { getUserByEmail } = require('./helpers');
 
 
 const express = require("express");
@@ -7,7 +7,10 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended:false}));
+app.use(express.json());
+
 
 // const cookieParser = require('cookie-parser');
 // app.use(cookieParser());
@@ -371,7 +374,7 @@ app.get("/urls/new", (req, res) => {
   // console.log(templateVars)
 
   if (!req.session.user) {
-    res.redirect(`/login`);
+    return res.status(302).redirect(`/login`);
   }
   
   res.render("urls_new", templateVars);
@@ -381,23 +384,40 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => { 
   const id = req.params.id;
   const urlDatabaseKeys = Object.keys(urlDatabase);
+  
   if (!urlDatabaseKeys.includes(id)) {
-    res.status(400).send('This URL does not exist!');
+    res.status(404).send('This URL does not exist!');
   }
 
   if (!req.session.user) {
-    res.status(400).send('<a href="/login">Please Log In</a>');
+    // res.status(302)
+    // return res.redirect('/login');
+    return res.status(302).redirect('/login');
+
+    // res.status(302).send('<a href="/login">Please Log In</a>');
   }
+
+  const userURLs = urlsForUser(req.session.user.id);
+  const userURLsKeys = Object.keys(userURLs);
+  // const id = req.params.id; // it can identify the correct it
+  // const longURL = urlDatabase[id].longURL; 
+  // console.log(longURL);
+
+  if (!userURLsKeys.includes(req.params.id)) {
+      res.status(403).send('You have not added this url!');
+  }
+  
+
+  // if (!longURL) {
+  //   res.status(400).send('Shortened URL does not exist');
+  // }
+
   const templateVars = { 
     // urls: urlDatabase,
     id: req.params.id, 
     longURL: urlDatabase[req.params.id].longURL,
     user: req.session.user
   };
-  // console.log(templateVars.longURL); // templateVars.longURL is coming up undefined. Which is why its not rendering in the show template
-  // console.log(urlDatabase[req.params.id]) // also undefined
-  // console.log(req.params.id) // y7lb6n, this works.
-  // console.log(urlDatabase[req.params.id]); // 67ybtml, https://github.com/RyanMSaunders/tinyapp
   
   res.render("urls_show", templateVars);
 });
@@ -412,7 +432,10 @@ app.listen(PORT, () => {
 
 // when user accesses page /hello, sends  hello
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  // res.send("Hello!");
+  if (!req.session.user) {
+    return res.status(302).redirect(`/login`);
+  }
 });
 
 
